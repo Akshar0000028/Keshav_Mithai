@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import db from "@/db";
+import { getProductById } from "@/lib/productsData";
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
-  const product = db.prepare("SELECT * FROM products WHERE id = ?").get(Number(id));
+  const id = Number(params.id);
+  const product = getProductById(id);
 
   if (!product) {
     return NextResponse.json({ error: "Product not found" }, { status: 404 });

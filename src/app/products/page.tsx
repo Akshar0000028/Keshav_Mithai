@@ -1,46 +1,28 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import ProductCard from "@/components/ProductCard";
-import type { Product } from "@/lib/types";
+import { products as allProducts } from "@/lib/productsData";
 
 function ProductsContent() {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category");
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>(categoryParam || "All");
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchProducts() {
-      setLoading(true);
-      const url = selectedCategory === "All"
-        ? "/api/products"
-        : `/api/products?category=${encodeURIComponent(selectedCategory)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      setProducts(data);
-      setLoading(false);
-    }
-    fetchProducts();
-  }, [selectedCategory]);
+  const categories = useMemo(
+    () => [...new Set(allProducts.map((p) => p.category))].sort(),
+    []
+  );
 
-  useEffect(() => {
-    async function fetchAll() {
-      const res = await fetch("/api/products");
-      const data: Product[] = await res.json();
-      const cats = [...new Set(data.map((p) => p.category))].sort();
-      setCategories(cats);
-    }
-    fetchAll();
-  }, []);
-
-  useEffect(() => {
-    if (categoryParam) setSelectedCategory(categoryParam);
-  }, [categoryParam]);
+  const filteredProducts = useMemo(
+    () =>
+      selectedCategory === "All"
+        ? allProducts
+        : allProducts.filter((p) => p.category === selectedCategory),
+    [selectedCategory]
+  );
 
   return (
     <div className="min-h-screen">
@@ -87,26 +69,13 @@ function ProductsContent() {
           </div>
 
           {/* Products Grid */}
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="card-elegant animate-pulse">
-                  <div className="aspect-square bg-stone-dark" />
-                  <div className="p-5 space-y-3">
-                    <div className="h-5 bg-stone-dark rounded w-3/4" />
-                    <div className="h-4 bg-stone-dark rounded w-full" />
-                    <div className="h-4 bg-stone-dark rounded w-1/2" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : products.length === 0 ? (
+          {filteredProducts.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-gray-500 text-xl">No sweets found in this category.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>

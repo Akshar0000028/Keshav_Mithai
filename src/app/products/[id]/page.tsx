@@ -1,49 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart, ArrowLeft, Minus, Plus, Star } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
-import type { Product } from "@/lib/types";
+import { getProductById } from "@/lib/productsData";
 
 export default function ProductDetailPage() {
   const params = useParams();
   const { addItem } = useCart();
-  const [product, setProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [loading, setLoading] = useState(true);
   const [added, setAdded] = useState(false);
 
-  useEffect(() => {
-    async function fetchProduct() {
-      const res = await fetch(`/api/products/${params.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setProduct(data);
-      }
-      setLoading(false);
-    }
-    fetchProduct();
-  }, [params.id]);
-
-  const handleAddToCart = () => {
-    if (!product) return;
-    for (let i = 0; i < quantity; i++) {
-      addItem(product);
-    }
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-saffron text-xl">Loading...</div>
-      </div>
-    );
-  }
+  const id = Number(params.id);
+  const product = Number.isNaN(id) ? null : getProductById(id);
 
   if (!product) {
     return (

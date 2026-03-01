@@ -1,24 +1,27 @@
 import { NextResponse } from "next/server";
-import db from "@/db";
+import { products } from "@/lib/productsData";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
   const featured = searchParams.get("featured");
 
-  let query = "SELECT * FROM products WHERE inStock = 1";
-  const params: (string | number)[] = [];
+  let filtered = products.filter((p) => p.inStock === 1);
 
   if (category) {
-    query += " AND category = ?";
-    params.push(category);
+    filtered = filtered.filter((p) => p.category === category);
   }
+
   if (featured === "true") {
-    query += " AND featured = 1";
+    filtered = filtered.filter((p) => p.featured === 1);
   }
 
-  query += " ORDER BY featured DESC, name ASC";
+  filtered = filtered.slice().sort((a, b) => {
+    if (b.featured !== a.featured) {
+      return b.featured - a.featured;
+    }
+    return a.name.localeCompare(b.name);
+  });
 
-  const products = db.prepare(query).all(...params);
-  return NextResponse.json(products);
+  return NextResponse.json(filtered);
 }
